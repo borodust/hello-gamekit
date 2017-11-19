@@ -28,8 +28,7 @@
 
 
 ;;;
-;;; Here we initialize resources we saved in /tmp/hello-gamekit-assets/
-;;; directory
+;;; Here we initialize resources we saved assets/ directory of this asdf system
 ;;;
 (defmethod gamekit:initialize-resources ((app hello-gamekit))
   (gamekit:import-image :snake-head "snake-head.png")
