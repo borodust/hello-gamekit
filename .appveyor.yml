@@ -1,0 +1,52 @@
+image:
+  - Visual Studio 2017
+
+platform:
+  - x64
+
+environment:
+  global:
+    GAMEKIT_SYSTEM_NAME: hello-gamekit
+    GAMEKIT_APPLICATION_PACKAGE: hello-gamekit
+    GAMEKIT_APPLICATION_MAIN_CLASS: hello-gamekit
+    GAMEKIT_ARTIFACT: $(GAMEKIT_SYSTEM_NAME)-x86-64-windows-$(APPVEYOR_REPO_TAG_NAME).zip
+
+skip_non_tags: true
+
+branches:
+  only:
+    - master
+    - "/^v\\d+(\\.\\d+)+$/"
+
+install:
+  - set PATH=C:\msys64\usr\bin;%HOMEPATH%\roswell\;%PATH%
+  - pacman --noconfirm -S zip unzip
+  - curl -O bodge.borodust.org/files/roswell-x86_64.zip
+  - unzip roswell-x86_64.zip -d %HOMEPATH%
+  - ros run -e "(ql-dist:install-dist \"http://bodge.borodust.org/dist/org.borodust.bodge.txt\" :prompt nil :replace t)" -q
+  - ros install trivial-gamekit/distribution
+  - mkdir %HOMEPATH%\.roswell\local-projects
+  - mklink /D %HOMEPATH%\.roswell\local-projects\%GAMEKIT_SYSTEM_NAME% %APPVEYOR_BUILD_FOLDER%
+
+build_script:
+  - set PATH=C:\msys64\usr\bin;%HOMEPATH%\roswell\;%PATH%
+  - ros -L sbcl-bin run -s trivial-gamekit/distribution -s %GAMEKIT_SYSTEM_NAME% -e "(gamekit.distribution:deliver :%GAMEKIT_SYSTEM_NAME% '%GAMEKIT_APPLICATION_PACKAGE%::%GAMEKIT_APPLICATION_MAIN_CLASS%)" -q
+  - mv %APPVEYOR_BUILD_FOLDER%/build/%GAMEKIT_SYSTEM_NAME%.zip %APPVEYOR_BUILD_FOLDER%/build/%GAMEKIT_ARTIFACT%
+
+artifacts:
+  - path: build/%GAMEKIT_ARTIFACT%
+    name: release_archive
+
+deploy:
+  provider: GitHub
+  release: $(APPVEYOR_REPO_TAG_NAME)
+  tag: $(APPVEYOR_REPO_TAG_NAME)
+  description: $(APPVEYOR_REPO_COMMIT_MESSAGE)
+  auth_token:
+    secure: Z5XWjDOBlCrmfz3SQAjnLKtdgI5B2b/owJhRPNWYGrI+qwVNbBc4cZiroBZReWP7
+  artifact: release_archive
+  force_update: true
+  draft: false
+  prerelease: false
+  on:
+    appveyor_repo_tag: true
