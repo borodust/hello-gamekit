@@ -16,23 +16,20 @@
                                                       (gamekit:vec2 425 300)
                                                       (gamekit:vec2 500 300))))
 
+(gamekit:register-resource-package :keyword
+                                   (asdf:system-relative-pathname :hello-gamekit "assets/"))
+
+
+(gamekit:define-image :snake-head "snake-head.png")
+(gamekit:define-sound :snake-grab "snake-grab.ogg")
+
 ;;;
 ;;; Main class we use to run our application
 ;;;
-(defclass hello-gamekit (gamekit:gamekit-system) ()
-  (:default-initargs
-   :resource-path (asdf:system-relative-pathname :hello-gamekit "assets/")
-   :viewport-width *canvas-width*
-   :viewport-height *canvas-height*
-   :viewport-title "Hello Gamekit!"))
-
-
-;;;
-;;; Here we initialize resources we saved assets/ directory of this asdf system
-;;;
-(defmethod gamekit:initialize-resources ((app hello-gamekit))
-  (gamekit:import-image :snake-head "snake-head.png")
-  (gamekit:import-sound :snake-grab "snake-grab.ogg"))
+(gamekit:defgame hello-gamekit () ()
+  (:viewport-width *canvas-width*)
+  (:viewport-height *canvas-height*)
+  (:viewport-title "Hello Gamekit!"))
 
 
 ;;;
@@ -69,7 +66,7 @@
 ;;; All the drawing should happend in this method
 ;;;
 (defmethod gamekit:draw ((app hello-gamekit))
-  (gamekit:print-text "A snake that is!" 300 400)
+  (gamekit:draw-text "A snake that is!" (gamekit:vec2 300 400))
   (update-position (aref *curve* 1) (real-time-seconds))
   (update-position (aref *curve* 2) (+ 0.1 (real-time-seconds)))
   (gamekit:draw-curve (aref *curve* 0)
