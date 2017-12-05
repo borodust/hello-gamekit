@@ -62,13 +62,15 @@
     (setf (gamekit:y position) (+ 300 (* 100 (sin angle))))))
 
 
+(defmethod gamekit:act ((app hello-gamekit))
+  (update-position (aref *curve* 1) (real-time-seconds))
+  (update-position (aref *curve* 2) (+ 0.1 (real-time-seconds))))
+
 ;;;
 ;;; All the drawing should happend in this method
 ;;;
 (defmethod gamekit:draw ((app hello-gamekit))
   (gamekit:draw-text "A snake that is!" (gamekit:vec2 300 400))
-  (update-position (aref *curve* 1) (real-time-seconds))
-  (update-position (aref *curve* 2) (+ 0.1 (real-time-seconds)))
   (gamekit:draw-curve (aref *curve* 0)
                       (aref *curve* 3)
                       (aref *curve* 1)
