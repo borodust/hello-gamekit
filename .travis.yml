@@ -11,12 +11,10 @@ env:
   - GAMEKIT_SYSTEM_NAME: hello-gamekit
   - GAMEKIT_APPLICATION_PACKAGE: hello-gamekit
   - GAMEKIT_APPLICATION_MAIN_CLASS: hello-gamekit
-  - PATH=~/.roswell/bin:$PATH
-  - ROSWELL_INSTALL_DIR=$HOME/.roswell
-  - GAMEKIT_TARGET_PACKAGE=$GAMEKIT_SYSTEM_NAME-x86-64-$TRAVIS_OS_NAME-$TRAVIS_BRANCH.zip
+  - PATH: ~/bin/:$PATH
+  - GAMEKIT_TARGET_PACKAGE: $GAMEKIT_SYSTEM_NAME-x86-64-$TRAVIS_OS_NAME-$TRAVIS_BRANCH.zip
+  - GAMEKIT_BUILD_DIR: /tmp/$(GAMEKIT_SYSTEM_NAME)
   - secure: "fQOvdFLZjxa4h9KoLhPexipPr+PMuX/1Rrmsj3p8UyaPQDMTJRtXkLtX9xJk9y5RI0J61Gh1vxd7xzxEab3//E5i9G+01u7zr6HmO2f3/gXrAw7d+XzAmX6cDt/b9p4k1lbcNYZB4jmhvwtH3cjHxjpPLlcHG1oo1bXqDV/pAkANGtDZI2hAHu6Y/rktr5OH0DrIp9Zi0AHTDwsc6sH1JNJfB8O1REazNwKuMxaWVZoy2yVyxI7hHTKEjZG5bRUddeUhW/jp6KkT7nncU7h8xDNygj7/qJSl51lxbxmtTGQPTwFYQEvQGgO8+LpAiBMt4I8afQde1Wc5Gw6PJUbKL3BeUY6WskWS6vWj1gNQqhfWsabuFVIqsyu16ZXtWio4Dc0SkHIM7qalMD6oUfp87VeZJKy/FAVHFMMovCddtTuTimV6wfvBn4nK/+DidvdyIck9IW1qDgblOoX8Is9bqtfTMlhcI+L9/SHkzlYJdAk2G0Cf5YYsZ/hMz/oIhVkJfS0/sgGRrFIIu3W+ys6ycyU4ufhqvLxUQph85lklQ6F+7fIjI5UdKzcOBTAIgfvW+U+hnrtHg9W61awkRcDzro9ppuuShBUNUgeL7B4msYFXZtoBrTtQ4A7CyKKRFADL5YUVGULII9SEwKSxAVgTpnWjq7SJUf4gRWUjGsHDnmI="
-  matrix:
-  - LISP=sbcl-bin
 
 branches:
   only:
@@ -27,22 +25,22 @@ os:
   - osx
 
 install:
-  - curl -L https://raw.githubusercontent.com/roswell/roswell/release/scripts/install-for-ci.sh | sh
-  - ros run -e '(ql-dist:install-dist "http://bodge.borodust.org/dist/org.borodust.bodge.txt" :prompt nil :replace t)' -q
-  - ros install trivial-gamekit/distribution
+  - curl -L http://bodge.borodust.org/files/install.sh | sh
 
 cache:
   directories:
-  - "$HOME/.roswell"
-  - "$HOME/.config/common-lisp"
-
-before_script: ln -fs $TRAVIS_BUILD_DIR ~/.roswell/local-projects/
+  - "$HOME/opt/sbcl/"
+  - "$HOME/.config/common-lisp/"
 
 script:
-  - ros -L sbcl-bin run -s trivial-gamekit/distribution -s $GAMEKIT_SYSTEM_NAME -e "(gamekit.distribution:deliver :$GAMEKIT_SYSTEM_NAME '$GAMEKIT_APPLICATION_PACKAGE::$GAMEKIT_APPLICATION_MAIN_CLASS)" -q
+  - >
+    sbcl --script $HOME/bodge/scripts/build-gamekit-system.lisp
+    $GAMEKIT_SYSTEM_NAME $GAMEKIT_APPLICATION_PACKAGE $GAMEKIT_APPLICATION_MAIN_CLASS
+    $TRAVIS_BUILD_DIR
+    $GAMEKIT_BUILD_DIR
 
 before_deploy:
-  - mv "$TRAVIS_BUILD_DIR/build/$GAMEKIT_SYSTEM_NAME.zip" $GAMEKIT_TARGET_PACKAGE
+  - mv "$GAMEKIT_BUILD_DIR/$GAMEKIT_SYSTEM_NAME.zip" $GAMEKIT_TARGET_PACKAGE
 
 deploy:
   provider: releases
