@@ -29,7 +29,41 @@
 (gamekit:defgame hello-gamekit () ()
   (:viewport-width *canvas-width*)
   (:viewport-height *canvas-height*)
-  (:viewport-title "Hello Gamekit!"))
+  (:viewport-title "Hello Gamekit!")
+  (:panels 'ui-demo-window))
+
+
+(ge.ui:defpanel (ui-demo-window
+              (:title "UI Demo")
+              (:origin 200 50)
+              (:width 400) (:height 400)
+              (:options :movable :resizable
+                        :minimizable :scrollable
+                        :closable))
+  (ge.ui:label :text "Nested:")
+  (ge.ui:horizontal-layout
+   (ge.ui:radio-group
+    (ge.ui:radio :label "Option 1")
+    (ge.ui:radio :label "Option 2" :activated t))
+   (ge.ui:vertical-layout
+    (ge.ui:check-box :label "Check 1" :width 100)
+    (ge.ui:check-box :label "Check 2"))
+   (ge.ui:vertical-layout
+    (ge.ui:label :text "Awesomely" :align :left)
+    (ge.ui:label :text "Stacked" :align :middle)
+    (ge.ui:label :text "Labels" :align :right)))
+  (ge.ui:label :text "Expand by width:")
+  (ge.ui:horizontal-layout
+   (ge.ui:button :label "Dynamic")
+   (ge.ui:button :label "Min-Width" :width 80)
+   (ge.ui:button :label "Fixed-Width" :expandable nil :width 100))
+  (ge.ui:label :text "Expand by ratio:")
+  (ge.ui:horizontal-layout
+   (ge.ui:button :label "1.0" :expand-ratio 1.0)
+   (ge.ui:button :label "0.75" :expand-ratio 0.75)
+   (ge.ui:button :label "0.5" :expand-ratio 0.5))
+  (ge.ui:label :text "Rest:")
+  (ge.ui:button :label "Top-Level Button"))
 
 
 ;;;
@@ -37,11 +71,11 @@
 ;;;
 (defmethod gamekit:post-initialize ((app hello-gamekit))
   (gamekit:bind-cursor (lambda (x y)
-                       "When left mouse button is pressed, update snake's head position"
-                       (when *head-grabbed-p*
-                         (let ((head-position (aref *curve* 3)))
-                           (setf (gamekit:x head-position) x
-                                 (gamekit:y head-position) y)))))
+                         "When left mouse button is pressed, update snake's head position"
+                         (when *head-grabbed-p*
+                           (let ((head-position (aref *curve* 3)))
+                             (setf (gamekit:x head-position) x
+                                   (gamekit:y head-position) y)))))
 
   (gamekit:bind-button :mouse-left :pressed
                        (lambda ()
