@@ -1,4 +1,4 @@
-language: common-lisp
+language: cpp
 sudo: false
 
 addons:
@@ -11,10 +11,10 @@ env:
   - GAMEKIT_SYSTEM_NAME: hello-gamekit
   - GAMEKIT_APPLICATION_PACKAGE: hello-gamekit
   - GAMEKIT_APPLICATION_MAIN_CLASS: hello-gamekit
-  - PATH: ~/bin/:$PATH
+  - PATH: ~/.bodge/bin/:$PATH
   - GAMEKIT_TARGET_PACKAGE: $GAMEKIT_SYSTEM_NAME-x86-64-$TRAVIS_OS_NAME-$TRAVIS_BRANCH.zip
   - GAMEKIT_BUILD_DIR: /tmp/$GAMEKIT_SYSTEM_NAME
-  - secure: "fQOvdFLZjxa4h9KoLhPexipPr+PMuX/1Rrmsj3p8UyaPQDMTJRtXkLtX9xJk9y5RI0J61Gh1vxd7xzxEab3//E5i9G+01u7zr6HmO2f3/gXrAw7d+XzAmX6cDt/b9p4k1lbcNYZB4jmhvwtH3cjHxjpPLlcHG1oo1bXqDV/pAkANGtDZI2hAHu6Y/rktr5OH0DrIp9Zi0AHTDwsc6sH1JNJfB8O1REazNwKuMxaWVZoy2yVyxI7hHTKEjZG5bRUddeUhW/jp6KkT7nncU7h8xDNygj7/qJSl51lxbxmtTGQPTwFYQEvQGgO8+LpAiBMt4I8afQde1Wc5Gw6PJUbKL3BeUY6WskWS6vWj1gNQqhfWsabuFVIqsyu16ZXtWio4Dc0SkHIM7qalMD6oUfp87VeZJKy/FAVHFMMovCddtTuTimV6wfvBn4nK/+DidvdyIck9IW1qDgblOoX8Is9bqtfTMlhcI+L9/SHkzlYJdAk2G0Cf5YYsZ/hMz/oIhVkJfS0/sgGRrFIIu3W+ys6ycyU4ufhqvLxUQph85lklQ6F+7fIjI5UdKzcOBTAIgfvW+U+hnrtHg9W61awkRcDzro9ppuuShBUNUgeL7B4msYFXZtoBrTtQ4A7CyKKRFADL5YUVGULII9SEwKSxAVgTpnWjq7SJUf4gRWUjGsHDnmI="
+  - secure: "GsZ5AhfeOcOhUqknXkhhMO9qVQjdpCytJYm6E7zvkReHNkERXIr4wSLZKyhjcNN8lal5lE+4tMCGDXPEdcxMh3uMG/xnA5GIxeQTy3d1R/SYJC8NlT1+EahdPdHKtCIsAyps1ZXrntdwddEmO+r320MeEVWocn72+fY5rCRcY64NWl6x6YMqXPF1up6PWPkF/QvjgZx7+Eg58x6WghKJWuEnS6HJkRVEEetWYsUhL2fObJdBUvpz4F4BUsQu1E3rkKOayIWhcunpBaY7LkjKE/a5q80V6WZvYy1J+qfUA0RKI6bGWJmshE6oc+TQgC6y3qklvgRkfgGtB3Ayt3AnWxmI6TECF5xNHiQv/urybRsnz4jj0dUrjFcs9rXrIXUqrpfXiPbKEnwa3XfQ+QxCwyPhHSULVmCYs7roIgmQikxG6vqAq21G/4M0KIu/e6u6cPqpPyL4noOlCPgVdqugvMfcv08pYQkNk8GG8cyKG/dUFjBTAyAQ9DHoZi/EXluAXKtr9msaY+V0EmBNLPjQcBE32QMAzClrKQdM2+uIzYZ8D6GkkGbSENdcdedDDA8gRm6vTePd82mir9R6/g8dtz56fHNRXvFkN7cSMNU37LbYs2JWaf2j48scuZmJWVnXLAv+57xs99sHeriMSdCMjxusQ2ksviy/igxeBETs5cs="
 
 branches:
   only:
@@ -23,14 +23,52 @@ branches:
 os:
   - linux
   - osx
+  - windows
+
+before_install:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        [[ ! -f C:/tools/msys64/msys2_shell.cmd ]] && rm -rf C:/tools/msys64
+        choco uninstall -y mingw
+        choco upgrade --no-progress -y msys2
+        export msys2='cmd //C RefreshEnv.cmd '
+        export msys2+='& set MSYS=winsymlinks:nativestrict '
+        export msys2+='& C:\\tools\\msys64\\msys2_shell.cmd -defterm -no-start'
+        export mingw64="$msys2 -mingw64 -full-path -here -c "\"\$@"\" --"
+        export msys2+=" -msys2 -c "\"\$@"\" --"
+        $msys2 pacman --sync --noconfirm --needed mingw-w64-x86_64-toolchain mingw-w64-x86_64-mesa
+        export PATH=/C/tools/msys64/mingw64/bin:$PATH
+        export MAKE=mingw32-make  # so that Autotools can find it
+        ;;
+      osx)
+        brew update
+        brew install git-lfs
+        ;;
+    esac
+
+before_cache:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        # https://unix.stackexchange.com/a/137322/107554
+        $msys2 pacman --sync --clean --noconfirm
+        ;;
+    esac
+
+cache:
+    directories:
+    - $HOME/AppData/Local/Temp/chocolatey
+    - /C/tools/msys64
 
 install:
   - curl -L http://bodge.borodust.org/files/install.sh | sh
-
+  - git lfs install && git lfs pull
+  - lisp install-testing-dist
 
 script:
   - >
-    lisp $HOME/bodge/scripts/build-gamekit-system.lisp
+    lisp build-gamekit-system
     $GAMEKIT_SYSTEM_NAME $GAMEKIT_APPLICATION_PACKAGE $GAMEKIT_APPLICATION_MAIN_CLASS
     $TRAVIS_BUILD_DIR
     $GAMEKIT_BUILD_DIR
